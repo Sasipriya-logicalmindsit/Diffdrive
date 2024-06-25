@@ -1,0 +1,89 @@
+# Common parameters
+controller_frequency: 10.0
+planner_frequency: 5.0
+oscillation_timeout: 10.0
+oscillation_distance: 0.2
+
+# Global costmap parameters
+global_costmap:
+  global_frame: map
+  robot_base_frame: base_link
+  update_frequency: 5.0
+  publish_frequency: 5.0
+  transform_tolerance: 0.5
+  resolution: 0.05
+  rolling_window: false
+  static_map: true
+
+  plugins:
+    - {name: static_layer, type: "costmap_2d::StaticLayer"}
+    - {name: inflation_layer, type: "costmap_2d::InflationLayer"}
+
+# Local costmap parameters
+local_costmap:
+  global_frame: odom
+  robot_base_frame: base_link
+  update_frequency: 5.0
+  publish_frequency: 5.0
+  transform_tolerance: 0.5
+  resolution: 0.05
+  rolling_window: true
+  width: 3.0
+  height: 3.0
+
+  plugins:
+    - {name: obstacle_layer, type: "costmap_2d::ObstacleLayer"}
+    - {name: inflation_layer, type: "costmap_2d::InflationLayer"}
+
+# Trajectory planner parameters
+TrajectoryPlannerROS:
+  max_vel_x: 0.5
+  min_vel_x: 0.1
+  max_vel_theta: 1.0
+  min_vel_theta: -1.0
+  acc_lim_theta: 3.2
+  acc_lim_x: 2.5
+  acc_lim_y: 0.0
+  acc_lim_trans: 2.5
+
+  yaw_goal_tolerance: 0.1
+  xy_goal_tolerance: 0.2
+  latch_xy_goal_tolerance: true
+
+  pdist_scale: 0.6
+  gdist_scale: 0.8
+  occdist_scale: 0.01
+
+  meter_scoring: true
+  oscillation_reset_dist: 0.05
+
+  escape_vel: -0.1
+
+  holonomic_robot: false
+
+  max_rotational_vel: 1.0
+  min_in_place_rotational_vel: 0.4
+  in_place_rotation_speed: 0.6
+
+  heading_lookahead: 0.325
+  heading_scoring: false
+  heading_scoring_timestep: 0.8
+  dwa: true
+  publish_cost_grid_pc: true
+  prune_plan: true
+
+# Recovery behaviors parameters
+recovery_behaviors:
+  - name: clear_costmap
+    type: "clear_costmap_recovery/ClearCostmapRecovery"
+  - name: rotate_recovery
+    type: "rotate_recovery/RotateRecovery"
+
+clear_costmap:
+  reset_distance: 1.5
+
+rotate_recovery:
+  min_rotational_vel: 0.4
+  max_rotational_vel: 1.0
+  acc_lim_theta: 3.2
+  tolerance: 0.1

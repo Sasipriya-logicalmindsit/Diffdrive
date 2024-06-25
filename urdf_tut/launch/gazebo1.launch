@@ -1,0 +1,81 @@
+<launch>
+  <!-- Load the URDF into the parameter 'robot_description' -->
+  <param name="robot_description" command="$(find xacro)/xacro '$(find urdf_tut)/urdf/01.urdf'" />
+
+  <!-- Include Gazebo launch file with custom world -->
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="world_name" value="$(find urdf_tut)/world/myworld.world"/>
+  </include>
+
+  <!-- Load controller parameters -->
+  <rosparam command="load" file="$(find urdf_tut)/config/diff.yaml" ns="diff_drive_controller" />
+  <rosparam command="load" file="$(find urdf_tut)/config/state.yaml" ns="rover_joint_state_controller" />
+
+  <!-- Start the controller manager -->
+  <node name="controller_spawner" pkg="controller_manager" type="spawner" args="rover_joint_state_controller diff_drive_controller"/>
+
+  <!-- Launch RViz -->
+  <arg name="rvizconfig" default="$(find urdf_tut)/rviz/urdf.rviz"/>
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rvizconfig)" required="true" />
+
+  <!-- Start joint state publisher -->
+  <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" />
+
+  <!-- Start robot state publisher -->
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
+
+  <!-- Start rqt_robot_steering for manual control -->
+  <node name="rqt_robot_steering" pkg="rqt_robot_steering" type="rqt_robot_steering">
+    <param name="default_topic" value="/cmd_vel"/>
+  </node>
+
+  <!-- Start the SLAM node (gmapping) -->
+  <node name="slam_gmapping" pkg="gmapping" type="slam_gmapping" output="screen">
+    <param name="base_frame" value="base_link"/>
+    <param name="odom_frame" value="odom"/>
+    <param name="map_update_interval" value="5.0"/>
+    <param name="maxUrange" value="5.0"/>
+    <param name="sigma" value="0.05"/>
+    <param name="kernelSize" value="1"/>
+    <param name="lstep" value="0.05"/>
+    <param name="astep" value="0.05"/>
+    <param name="iterations" value="5"/>
+    <param name="lsigma" value="0.075"/>
+    <param name="ogain" value="3.0"/>
+    <param name="lskip" value="0"/>
+    <param name="srr" value="0.1"/>
+    <param name="srt" value="0.2"/>
+    <param name="str" value="0.1"/>
+    <param name="stt" value="0.2"/>
+    <param name="linearUpdate" value="1.0"/>
+    <param name="angularUpdate" value="0.5"/>
+    <param name="temporalUpdate" value="1.0"/>
+    <param name="resampleThreshold" value="0.5"/>
+    <param name="particles" value="30"/>
+    <param name="xmin" value="-5.0"/>
+    <param name="ymin" value="-5.0"/>
+    <param name="xmax" value="5.0"/>
+    <param name="ymax" value="5.0"/>
+    <param name="delta" value="0.05"/>
+    <param name="llsamplerange" value="0.01"/>
+    <param name="llsamplestep" value="0.01"/>
+    <param name="lasamplerange" value="0.005"/>
+    <param name="lasamplestep" value="0.005"/>
+  </node>
+
+  <!-- TF Broadcaster for linking laser and base_link -->
+  <node pkg="tf2_ros" type="static_transform_publisher" name="map_to_odom" args="0 0 0 0 0 0 map odom 100"/>
+  <node pkg="tf2_ros" type="static_transform_publisher" name="laser_to_base_link" args="0 0 0 0 0 0 base_link laser_link 100"/>
+
+
+
+
+
+  <!-- Start the laser scan node (assuming a laser is attached to the robot) -->
+  <node name="gazebo_ros_laser" pkg="gazebo_ros" type="gazebo_ros_laser" output="screen">
+    <param name="robotNamespace" value=""/>
+    <param name="topicName" value="scan"/>
+    <param name="frameName" value="laser_link"/>
+    <param name="updateRate" value="10.0"/>
+  </node>
+</launch>

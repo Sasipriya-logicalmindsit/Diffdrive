@@ -1,0 +1,74 @@
+<launch>
+  <!-- Load the URDF into the parameter 'robot_description' -->
+  <param name="robot_description" command="$(find xacro)/xacro '$(find urdf_tut)/urdf/01.urdf'" />
+
+  <!-- Include Gazebo launch file with custom world -->
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="world_name" value="$(find urdf_tut)/world/my world.world"/>
+  </include>
+
+  <!-- Load controller parameters -->
+  <rosparam command="load" file="$(find urdf_tut)/config/diff.yaml" ns="diff_drive_controller" />
+  <rosparam command="load" file="$(find urdf_tut)/config/state.yaml" ns="rover_joint_state_controller" />
+
+  <!-- Start the controller manager -->
+  <node name="controller_spawner" pkg="controller_manager" type="spawner" args="rover_joint_state_controller diff_drive_controller"/>
+
+  <!-- Launch RViz -->
+  <arg name="rvizconfig" default="$(find urdf_tut)/rviz/urdf.rviz"/>
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rvizconfig)" required="true" />
+
+  <!-- Start joint state publisher -->
+  <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" />
+
+  <!-- Start robot state publisher -->
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
+  
+  
+
+  <!-- Argument for map file path -->
+  <arg name="map_file" default="$(find urdf_tut)/map/my_map.yaml"/>
+
+  <!-- Map server node -->
+  <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" respawn="true" />
+
+  <!-- Start the laser scan node (assuming a laser is attached to the robot) -->
+  <node name="gazebo_ros_laser" pkg="gazebo_ros" type="gazebo_ros_laser" output="screen">
+    <param name="robotNamespace" value=""/>
+    <param name="topicName" value="scan"/>
+    <param name="frameName" value="laser_link"/>
+    <param name="updateRate" value="10.0"/>
+  </node>
+
+  <!-- AMCL Node for Localization -->
+  <node pkg="amcl" type="amcl" name="amcl" output="screen">
+    <param name="odom_frame_id" value="odom"/>
+    <param name="base_frame_id" value="base_link"/>
+    <param name="global_frame_id" value="map"/>
+    <param name="update_min_d" value="0.2"/>
+    <param name="update_min_a" value="0.2"/>
+    <param name="odom_alpha1" value="0.2"/>
+    <param name="odom_alpha2" value="0.2"/>
+    <param name="odom_alpha3" value="0.2"/>
+    <param name="odom_alpha4" value="0.2"/>
+    <param name="initial_pose_x" value="0.0"/>
+    <param name="initial_pose_y" value="0.0"/>
+    <param name="initial_pose_a" value="0.0"/>
+    <param name="min_particles" value="500"/>
+    <param name="max_particles" value="2000"/>
+    <param name="kld_err" value="0.05"/>
+    <param name="kld_z" value="0.99"/>
+    <param name="resample_interval" value="1"/>
+    <param name="laser_lambda_short" value="0.1"/>
+    <param name="laser_model_type" value="likelihood_field"/>
+    <param name="laser_z_hit" value="0.95"/>
+    <param name="laser_z_short" value="0.1"/>
+    <param name="laser_z_max" value="0.05"/>
+    <param name="laser_z_rand" value="0.05"/>
+  </node>
+
+  <!-- Move Base Node -->
+  <node pkg="move_base" type="move_base" name="move_base" output="screen">
+    <rosparam file="$(find urdf_tut)/config/move_base_params.yaml" command="load"/>
+  </node>
+</launch>
